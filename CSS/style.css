@@ -256,6 +256,22 @@ body {
   }
 }
 /* Dark Mode */
+
+
+
+body.dark-mode {
+    background-color: #121212; /* Dark background */
+    color: #ffffff; /* Light text color */
+}
+
+body.dark-mode a {
+    color: #007bff; /* Light link color */
+}
+
+body.dark-mode .cs-button {
+    background-color: #333; /* Dark button background */
+    color: #fff; /* Light button text */
+}
 @media only screen and (min-width: 0rem) {
   body.dark-mode #gallery-404 .cs-topper {
     color: var(--primaryLight);
