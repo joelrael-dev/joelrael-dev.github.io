@@ -4,16 +4,15 @@
 }
 
 body {
-  height: 200px;
+  height: 50vh;
   background: black;
 }
 
 .title {
   position: absolute;
-  top: 50%;
+  top: 20%;
   left: 50%;
   transform: translate(-50%, -50%);
-  border: 4px ;
   font-size: 80px;
   font-weight: bold;
   color: white;
