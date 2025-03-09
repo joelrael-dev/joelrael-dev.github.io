@@ -4,7 +4,7 @@
 }
 
 body {
-  height: 200px;
+  height: 500px;
   background: black;
 }
 
@@ -19,6 +19,6 @@ body {
   color: white;
 }
 .hero {
-  height: 200px; /* Example: fixed height of 500 pixels */
+  height: 500px; /* Example: fixed height of 500 pixels */
   /* other styles */
 }
