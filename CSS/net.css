@@ -18,3 +18,7 @@ body {
   font-weight: bold;
   color: white;
 }
+.hero {
+  height: 500px; /* Example: fixed height of 500 pixels */
+  /* other styles */
+}
