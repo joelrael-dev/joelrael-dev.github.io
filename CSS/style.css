@@ -75,7 +75,10 @@ nav {
   background-color: rgba(255, 255, 255, 0.1);
 
 }
-
+.hero {
+  height: 200px;
+  background: black;
+}
 .hero-content {
 
   text-align: center;
