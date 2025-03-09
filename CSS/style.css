@@ -76,12 +76,12 @@ nav {
 
 }
 .hero {
-  height: 200px;
+  height: 500px;
   background: black;
 }
 .hero-content {
 
-  text-align: center;
+  text-align: top;
 
 }
 
