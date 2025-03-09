@@ -82,32 +82,6 @@ nav {
 
 }
 
-.hero {
-  height: 100vh; /* Ensure hero section takes full viewport height */
-  background: black; /* Set background color to black */
-  position: relative; /* Allow positioning child elements within */
-  overflow: hidden; /* Hide particles that go outside the section */
-}
-
-.hero .canvas {
-  position: absolute; /* Position canvas within the hero section */
-  top: 0; /* Place canvas at the top */
-  left: 0; /* Place canvas at the left */
-  z-index: -1; /* Place canvas behind the title */
-}
-
-.hero .title {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border: 4px solid white;
-  font-size: 80px;
-  font-weight: bold;
-  color: white;
-  z-index: 1; /* Ensure title is in front of the canvas */
-}
-
 h1 {
 
   font-size: 48px;
