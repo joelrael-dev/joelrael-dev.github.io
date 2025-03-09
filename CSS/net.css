@@ -4,16 +4,21 @@
 }
 
 body {
-  height: 100vh;
+  height: 200px;
   background: black;
 }
 
 .title {
   position: absolute;
-  top: 20%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  border: 4px ;
   font-size: 80px;
   font-weight: bold;
   color: white;
+}
+.hero {
+  height: 200px; /* Example: fixed height of 500 pixels */
+  /* other styles */
 }
