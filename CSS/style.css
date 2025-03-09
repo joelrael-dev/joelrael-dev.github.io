@@ -78,6 +78,8 @@ nav {
 .hero {
   height: 500px;
   background: black;
+  position:relative;
+  overflow: hidden;
 }
 .hero-content {
 
