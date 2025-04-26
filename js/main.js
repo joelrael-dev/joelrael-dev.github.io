@@ -8,7 +8,7 @@ let atomMeshes = []; // Store meshes that need color updates
 const clock = new THREE.Clock();
 
 // --- Configuration ---
-const pdbId = '4V60';
+const pdbId = '4HL8';
 const pdbUrl = `https://files.rcsb.org/download/${pdbId}.pdb`;
 const rotationSpeed = 0.1; // Radians per second
 const colorWaveSpeed = 0.5;
