@@ -22,7 +22,7 @@ function init() {
 
     // Camera
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 5000);
-    camera.position.z = 1000; // Start further away
+    camera.position.z = 500; // Start further away
 
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -42,7 +42,7 @@ function init() {
     controls.dampingFactor = 0.05;
     controls.screenSpacePanning = false;
     controls.minDistance = 100;
-    controls.maxDistance = 2000;
+    controls.maxDistance = 1000;
 
     // Molecule Group
     moleculeGroup = new THREE.Group();
@@ -86,7 +86,7 @@ function loadMolecule(url) {
         // Material for Atoms (allowing color changes)
         const atomMaterial = new THREE.MeshPhongMaterial({
             vertexColors: true, // Enable vertex/instance colors
-            shininess: 50
+            shininess: 100
         });
 
         const atomMesh = new THREE.Mesh(geometryAtoms, atomMaterial);
