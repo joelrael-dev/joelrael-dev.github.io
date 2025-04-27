@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embedded 3Dmol Viewer</title>
+
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <script src="https://3Dmol.org/build/3Dmol.ui-min.js"></script>
+
+    <style>
+        /* Optional: Basic styling for the body */
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>3Dmol Viewer Example (PDB: 6ZPO)</h1>
+    <p>This page embeds a 3Dmol.js viewer to display the molecular structure with PDB ID 6ZPO.</p>
+
+    <div style="height: 400px; width: 400px; position: relative;" class='viewer_3Dmoljs' data-pdb='6ZPO' data-backgroundcolor='0xffffff' data-style='stick' data-ui='true'></div>
+
+    <p>You can interact with the molecule using your mouse (rotate, zoom, pan). The UI elements (enabled by `data-ui='true'`) might provide additional controls.</p>
+
+</body>
+</html>
