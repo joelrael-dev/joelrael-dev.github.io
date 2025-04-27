@@ -10,6 +10,7 @@ let moleculeGroup; // Group to hold the molecule parts
 // --- Configuration ---
 const pdbId = '7XNH'; // The PDB ID to load
 const pdbUrl = `https://files.rcsb.org/download/${pdbId}.pdb`;
+const atomSphereRadius = 0.4; // Adjust radius of atom spheres as needed
 
 // --- Initialization Function ---
 function init() {
@@ -23,6 +24,7 @@ function init() {
 
     // Renderer setup
     renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio); // Adjust for high-DPI displays
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement); // Add canvas to the HTML body
 
@@ -61,40 +63,75 @@ function loadMolecule(url) {
     const infoDiv = document.getElementById('info'); // Assuming an info div exists in HTML
     if (infoDiv) infoDiv.textContent = `Loading PDB: ${pdbId}...`;
 
+    // Reusable objects for InstancedMesh setup
+    const tempMatrix = new THREE.Matrix4();
+    const tempColor = new THREE.Color();
+    const tempPosition = new THREE.Vector3(); // To read position attribute
+
     loader.load(url, (pdb) => {
         // PDB loaded successfully
-        if (infoDiv) infoDiv.textContent = `PDB: ${pdbId} Loaded. Atoms: ${pdb.geometryAtoms.getAttribute('position').count}`;
-        console.log("PDB Loaded:", pdb);
-
         const geometryAtoms = pdb.geometryAtoms;
         const geometryBonds = pdb.geometryBonds;
+        const atomPositions = geometryAtoms.getAttribute('position');
+        const atomColors = geometryAtoms.getAttribute('color'); // PDBLoader provides colors per atom
+        const atomCount = atomPositions.count;
 
-        // --- Atoms ---
-        // Calculate bounding box for centering and camera adjustment
-        geometryAtoms.computeBoundingBox();
-        const bbox = geometryAtoms.boundingBox;
+        if (infoDiv) infoDiv.textContent = `PDB: ${pdbId} Loaded. Atoms: ${atomCount}`;
+        console.log("PDB Loaded:", pdb);
 
-        // Simple material for Atoms (reacts to light)
+
+        // --- Atoms (as Spheres using InstancedMesh) ---
+        // 1. Base Geometry (a single sphere)
+        const sphereGeometry = new THREE.IcosahedronGeometry(atomSphereRadius, 3); // Icosahedron is a good sphere approximation
+
+        // 2. Material (that uses instance colors)
         const atomMaterial = new THREE.MeshPhongMaterial({
-            color: 0xffffff, // Default white color
-            vertexColors: true, // Use colors from PDB if available, otherwise defaults
-            shininess: 30
+            shininess: 30,
+            vertexColors: false, // We are using INSTANCE colors, not vertex colors on the sphere itself
+            // side: THREE.DoubleSide // Can uncomment if spheres look odd from inside
         });
 
-        const atomMesh = new THREE.Mesh(geometryAtoms, atomMaterial);
-        moleculeGroup.add(atomMesh);
+        // 3. InstancedMesh
+        const atomMesh = new THREE.InstancedMesh(sphereGeometry, atomMaterial, atomCount);
+        atomMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); // May help performance if matrices change often (not strictly needed here)
+        atomMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(atomCount * 3), 3); // Enable instance colors
 
-        // --- Bonds ---
+        // 4. Set position and color for each instance
+        for (let i = 0; i < atomCount; i++) {
+            // Get position for this atom
+            tempPosition.fromBufferAttribute(atomPositions, i);
+            // Set the transformation matrix for this instance (only position is needed)
+            tempMatrix.setPosition(tempPosition);
+            atomMesh.setMatrixAt(i, tempMatrix);
+
+            // Get color for this atom
+            tempColor.fromBufferAttribute(atomColors, i);
+            // Set the color for this instance
+            atomMesh.setColorAt(i, tempColor);
+        }
+        atomMesh.instanceMatrix.needsUpdate = true; // Tell Three.js matrices have been set
+        if (atomMesh.instanceColor) {
+             atomMesh.instanceColor.needsUpdate = true; // Tell Three.js colors have been set
+        }
+
+
+        moleculeGroup.add(atomMesh); // Add the InstancedMesh to the group
+
+        // --- Bonds (as Lines) ---
         // Simple material for Bonds
         const bondMaterial = new THREE.LineBasicMaterial({
              color: 0x888888, // Grey color for bonds
-             vertexColors: true, // Use colors from PDB if available
+             vertexColors: true, // Use colors from PDB geometryBonds if available
              linewidth: 1 // Note: linewidth > 1 might not work on all platforms
         });
         const bondLines = new THREE.LineSegments(geometryBonds, bondMaterial);
         moleculeGroup.add(bondLines);
 
+
         // --- Center the molecule and adjust camera ---
+        // Calculate bounding box using the original atom positions geometry
+        geometryAtoms.computeBoundingBox();
+        const bbox = geometryAtoms.boundingBox;
         const center = new THREE.Vector3();
         bbox.getCenter(center);
         moleculeGroup.position.sub(center); // Move group so its center is at the world origin
@@ -138,8 +175,9 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 
-    // Update renderer size
+    // Update renderer size and pixel ratio
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
 }
 
 // --- Start the application ---
