@@ -1,111 +1,147 @@
+// Import necessary Three.js modules
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PDBLoader } from 'three/addons/loaders/PDBLoader.js';
 
+// --- Global variables ---
 let scene, camera, renderer, controls;
 let moleculeGroup; // Group to hold the molecule parts
-let atomMeshes = []; // Store meshes that need color updates
-const clock = new THREE.Clock();
 
 // --- Configuration ---
-const pdbId = '7XNH';
+const pdbId = '7XNH'; // The PDB ID to load
 const pdbUrl = `https://files.rcsb.org/download/${pdbId}.pdb`;
-const rotationSpeed = 0.1; // Radians per second
-const colorWaveSpeed = 0.5;
-const colorWaveFrequency = 0.1; // Lower value = wider waves
 
-// --- Initialization ---
+// --- Initialization Function ---
 function init() {
-    // Scene
+    // Scene setup
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x050505); // Dark background
+    scene.background = new THREE.Color(0x111111); // Dark grey background
 
-    // Camera
+    // Camera setup
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 5000);
-    camera.position.z = 500; // Start further away
+    camera.position.z = 1000; // Initial camera distance
 
-    // Renderer
+    // Renderer setup
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    document.body.appendChild(renderer.domElement); // Add canvas to the HTML body
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xcccccc, 0.8); // Soft ambient light
+    // Lighting setup
+    const ambientLight = new THREE.AmbientLight(0xcccccc, 0.6); // Softer ambient light
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Brighter directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // Main light source
     directionalLight.position.set(1, 1, 1).normalize();
     scene.add(directionalLight);
 
-    // Controls
+    // Controls setup (for user interaction)
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; // Smooth camera movement
+    controls.enableDamping = true; // Adds inertia to camera movement
     controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = false;
-    controls.minDistance = 100;
-    controls.maxDistance = 1000;
+    controls.screenSpacePanning = false; // Keep panning relative to the scene origin
+    controls.minDistance = 50;   // How close the user can zoom in
+    controls.maxDistance = 2000; // How far the user can zoom out
 
-    // Molecule Group
+    // Molecule Group setup
     moleculeGroup = new THREE.Group();
     scene.add(moleculeGroup);
 
-    // Load PDB
+    // Load the PDB molecule data
     loadMolecule(pdbUrl);
 
-    // Handle window resize
+    // Add resize listener
     window.addEventListener('resize', onWindowResize);
 
-    // Start animation loop
+    // Start the animation loop
     animate();
 }
 
-// --- Load PDB Data ---
+// --- Load PDB Data Function ---
 function loadMolecule(url) {
     const loader = new PDBLoader();
-    const infoDiv = document.getElementById('info');
+    const infoDiv = document.getElementById('info'); // Assuming an info div exists in HTML
+    if (infoDiv) infoDiv.textContent = `Loading PDB: ${pdbId}...`;
 
     loader.load(url, (pdb) => {
-        infoDiv.textContent = `PDB: ${pdbId} Loaded. Atoms: ${pdb.geometryAtoms.getAttribute('position').count}`;
+        // PDB loaded successfully
+        if (infoDiv) infoDiv.textContent = `PDB: ${pdbId} Loaded. Atoms: ${pdb.geometryAtoms.getAttribute('position').count}`;
         console.log("PDB Loaded:", pdb);
 
         const geometryAtoms = pdb.geometryAtoms;
         const geometryBonds = pdb.geometryBonds;
-        const json = pdb.json;
 
         // --- Atoms ---
-        // Use InstancedMesh for performance if available (PDBLoader might already do this)
-        // For simplicity here, we'll assume it might create regular Meshes or InstancedMeshes
-        // We need to ensure materials support vertex/instance colors for the effect.
-
-        // Calculate bounding box for color mapping
+        // Calculate bounding box for centering and camera adjustment
         geometryAtoms.computeBoundingBox();
         const bbox = geometryAtoms.boundingBox;
-        const yMin = bbox.min.y;
-        const yMax = bbox.max.y;
-        const yRange = yMax - yMin;
 
-        // Material for Atoms (allowing color changes)
+        // Simple material for Atoms (reacts to light)
         const atomMaterial = new THREE.MeshPhongMaterial({
-            vertexColors: true, // Enable vertex/instance colors
-            shininess: 100
+            color: 0xffffff, // Default white color
+            vertexColors: true, // Use colors from PDB if available, otherwise defaults
+            shininess: 30
         });
+
+        const atomMesh = new THREE.Mesh(geometryAtoms, atomMaterial);
+        moleculeGroup.add(atomMesh);
+
+        // --- Bonds ---
+        // Simple material for Bonds
+        const bondMaterial = new THREE.LineBasicMaterial({
+             color: 0x888888, // Grey color for bonds
+             vertexColors: true, // Use colors from PDB if available
+             linewidth: 1 // Note: linewidth > 1 might not work on all platforms
+        });
+        const bondLines = new THREE.LineSegments(geometryBonds, bondMaterial);
+        moleculeGroup.add(bondLines);
+
+        // --- Center the molecule and adjust camera ---
+        const center = new THREE.Vector3();
+        bbox.getCenter(center);
+        moleculeGroup.position.sub(center); // Move group so its center is at the world origin
+
+        // Adjust camera distance based on molecule size
+        const sphere = new THREE.Sphere();
+        bbox.getBoundingSphere(sphere);
+        // Position camera based on the bounding sphere radius
+        camera.position.z = Math.max(sphere.radius * 2.5, 150); // Ensure camera isn't too close for small molecules
+        controls.target.copy(moleculeGroup.position); // Point controls at the molecule center
+        controls.update(); // Apply changes to controls
+
+    }, (xhr) => {
+        // Progress callback (optional)
+        if (infoDiv && xhr.lengthComputable) {
+            const percentComplete = xhr.loaded / xhr.total * 100;
+            infoDiv.textContent = `Loading PDB: ${pdbId}... ${Math.round(percentComplete, 2)}%`;
+        }
+    }, (err) => {
+        // Error callback
+        console.error('Error loading PDB file:', err);
+        if (infoDiv) infoDiv.textContent = `Error loading PDB: ${pdbId}`;
+    });
+}
+
 // --- Animation Loop ---
 function animate() {
+    // Request the next frame
     requestAnimationFrame(animate);
 
-    const deltaTime = clock.getDelta();
-    const elapsedTime = clock.getElapsedTime();
-
-    // Update controls
+    // Update controls (handles damping)
     controls.update();
 
-    // Slowly rotate the molecule group
-    if (moleculeGroup) {
-        moleculeGroup.rotation.y += rotationSpeed * deltaTime;
-    }
-
-    // Update colors for the wave effect
-    updateColors(elapsedTime);
-
-    // Render the scene
+    // Render the scene from the camera's perspective
     renderer.render(scene, camera);
 }
+
+// --- Handle Window Resize ---
+function onWindowResize() {
+    // Update camera aspect ratio
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    // Update renderer size
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// --- Start the application ---
+init();
+
